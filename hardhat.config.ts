@@ -1,5 +1,6 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
+require('dotenv').config();
 
 // const config: HardhatUserConfig = {
 //   solidity: "0.8.17",
@@ -37,7 +38,7 @@ networks: {
   },
 
   goerli: {
-    url: process.env.GOERLI_RPC_URL,
+    url: `${process.env.GOERLI_RPC_URL}`,
     accounts: [`${process.env.PRIVATE_KEY}`],
     gas: 300000000,
     gasPrice: 100000000000,
@@ -51,7 +52,7 @@ networks: {
     accounts: [`${process.env.PRIVATE_KEY}`],
   },
   mumbai: {
-    url: process.env.MUMBAI_RPC_URL,
+    url: `${process.env.MUMBAI_RPC_URL}`,
     accounts: [`${process.env.PRIVATE_KEY}`],
     gas: 200000000,
     gasPrice: 100000000000,
