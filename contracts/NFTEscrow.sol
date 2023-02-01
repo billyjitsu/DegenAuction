@@ -67,8 +67,8 @@ contract NFTEscrow is IERC721Receiver {
 
     function onERC721Received(
         address,
-        address from,
-        uint256 tokenId,
+        address,
+        uint256,
         bytes memory
     ) public override returns (bytes4) {
        // require(paperNft.ownerOf(tokenId) == address(this), "MALICIOUS");
