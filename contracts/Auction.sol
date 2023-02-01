@@ -36,7 +36,7 @@ contract Auction is NFTEscrow, Ownable {
     constructor () {
     }
 
-    function startAuction(address _contractAddress, uint256 tokenId) public {
+    function startAuction(address _contractAddress, uint256 tokenId) public {  //set a time for the auction
         auctionStarted = true;
         auctionStartTime = block.timestamp;
         auctionEndTime = (auctionStartTime + 3 minutes) ;  //base in minutes, day = 1440 minutes, 1 week = 10080
@@ -63,7 +63,7 @@ contract Auction is NFTEscrow, Ownable {
         deposits[msg.sender] = msg.value;
     }
 
-    function withdrawAuctionFunds(INFT _token, uint256 _tokenId, uint256 _depositId) public  {
+    function withdrawAuctionFunds(address _token, uint256 _tokenId, uint256 _depositId) public  {
         require(msg.sender == depositors[_depositId].nftOwner, "Not Auctioneer");
         require(block.timestamp >= auctionEndTime, "Auction has not ended.");
         withdrawToken(_token, _tokenId, _depositId, highestBidder);
@@ -83,6 +83,7 @@ contract Auction is NFTEscrow, Ownable {
         return difference;
     }
 
+    //remove this?
     function willFinishAt () public view returns(uint256) {
         if(auctionStartTime == 0){
             return 0;

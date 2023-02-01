@@ -1,20 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
+import "./Interfaces/IERC721.sol";
+import "./Interfaces/IERC721Reciever.sol";
 
-interface INFT {
-    function setApprovalForAll(address operator, bool approved) external;
-    function balanceOf(address owner) external view returns (uint256);
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 tokenId,
-        bytes calldata data
-    ) external;
-    function ownerOf(uint256 tokenId) external view returns (address owner);
-}
 
 contract NFTEscrow is IERC721Receiver {
     using Counters for Counters.Counter;
@@ -36,7 +26,6 @@ contract NFTEscrow is IERC721Receiver {
     
     uint256 public _tokenIdCounter = 1;
     uint256 public tokensRecieved = 0;
-    INFT paperNft;
 
     mapping(uint256 => Depositor) public  depositors;
     //Depositor public depositor;
@@ -48,7 +37,7 @@ contract NFTEscrow is IERC721Receiver {
 
     function registerAuction(address _contractAddress, uint256 tokenId) internal {
         //Have to approva externally
-        INFT nftContractAddress = INFT(_contractAddress);
+      //  INFT nftContractAddress = INFT(_contractAddress);
         uint256 depositId = _depositorIdCounter.current();
         _depositorIdCounter.increment();
         depositors[depositId].nftOwner = msg.sender;
@@ -56,13 +45,13 @@ contract NFTEscrow is IERC721Receiver {
         depositors[depositId].tknIdOwner = tokenId;
         depositors[depositId].depositId = depositId;
         depositors[depositId].claimed = false;
-        nftContractAddress.safeTransferFrom(msg.sender, address(this), tokenId, "0x0");
+        IERC721(_contractAddress).safeTransferFrom(msg.sender, address(this), tokenId, "0x0");
     }
 
-    function withdrawToken(INFT token, uint256 _tokenId, uint256 depositId, address _winner) public  {
+    function withdrawToken(address token, uint256 _tokenId, uint256 depositId, address _winner) public  {
        require(depositors[depositId].claimed == false, "Already Claimed");
        depositors[depositId].claimed = true;
-       token.safeTransferFrom(address(this), _winner, _tokenId, "0x0");
+       IERC721(token).safeTransferFrom(address(this), _winner, _tokenId, "0x0");
     }
 
     function onERC721Received(
