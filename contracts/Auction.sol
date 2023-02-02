@@ -52,6 +52,7 @@ contract Auction is NFTEscrow, Ownable {
     function startAuction(uint256 _time) public {  //set a time for the auction CONVERT Seconds to MINUTES 3 mins = 180
         require(nftauctions[msg.sender].auctionCreator == msg.sender, "Not Auction Creator.");
         require(auctionStarted == false, "Auction already started.");
+        require(nftauctions[msg.sender].claimed = false, "No NFT to auction");
         auctionStarted = true;
         auctionStartTime = block.timestamp;
         auctionEndTime = (auctionStartTime + _time /* minutes */) ;  //base in minutes, day = 1440 minutes, 1 week = 10080
