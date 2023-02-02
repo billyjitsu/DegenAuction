@@ -23,11 +23,10 @@ contract NFTEscrow is IERC721Receiver {
         // mapping(address => bool) voters;
     }
     
-    
     uint256 public _tokenIdCounter = 1;
     uint256 public tokensRecieved = 0;
 
-    mapping(uint256 => Depositor) public  depositors;
+    mapping(address => Depositor) public  depositors;
     //Depositor public depositor;
    // constructor(address nftContract)  {
     constructor()  {
@@ -36,21 +35,22 @@ contract NFTEscrow is IERC721Receiver {
     }
 
     function registerAuction(address _contractAddress, uint256 tokenId) internal {
-        //Have to approva externally
-      //  INFT nftContractAddress = INFT(_contractAddress);
+        
+
         uint256 depositId = _depositorIdCounter.current();
         _depositorIdCounter.increment();
-        depositors[depositId].nftOwner = msg.sender;
-        depositors[depositId].nftContract = _contractAddress;
-        depositors[depositId].tknIdOwner = tokenId;
-        depositors[depositId].depositId = depositId;
-        depositors[depositId].claimed = false;
+        depositors[msg.sender].nftOwner = msg.sender;
+        depositors[msg.sender].nftContract = _contractAddress;
+        depositors[msg.sender].tknIdOwner = tokenId;
+        depositors[msg.sender].depositId = depositId;
+        depositors[msg.sender].claimed = false;
         IERC721(_contractAddress).safeTransferFrom(msg.sender, address(this), tokenId, "0x0");
+        //event - NFT register for auction
     }
 
-    function withdrawToken(address token, uint256 _tokenId, uint256 depositId, address _winner) public  {
-       require(depositors[depositId].claimed == false, "Already Claimed");
-       depositors[depositId].claimed = true;
+    function withdrawToken(address token, uint256 _tokenId, /*uint256 depositId,*/ address _winner) internal  {
+       require(depositors[msg.sender].claimed == false, "Already Claimed");
+       depositors[msg.sender].claimed = true;
        IERC721(token).safeTransferFrom(address(this), _winner, _tokenId, "0x0");
     }
 

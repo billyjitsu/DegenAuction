@@ -12,36 +12,49 @@ contract Auction is NFTEscrow, Ownable {
     bool auctionStarted;
     bool auctionEnded;
 
-    
     uint256 public highestBid;
     uint256 public auctionStartTime;
     uint256 public auctionEndTime;
     uint256 public valueLocked;
 
     mapping(address => uint256) public  myAuctions;
-
     mapping(address => uint256) public deposits;
+
+    mapping(address => NFTAuction) public  nftauctions;
 
     struct NFTAuction { //fix this
         address auctionCreator;
         address nftContract;
         uint256 auctionNumber;
-        uint256 depositId;
+        uint256 nftTokenId;
         address finalBidder;
         uint256 theHighestBid;
-        // bool claimed;
+        bool claimed;
         // mapping(address => bool) voters;
     }
 
     constructor () {
     }
+    //step1 register
+    function registerNFTAuction (address _contractAddress, uint256 tokenId) public {
+        //make sure they don't have an auction already
+        //make sure there isn't an auction ongoing (would erase existing) - keep mapping of auctions for future
+        nftauctions[msg.sender].auctionCreator = msg.sender;
+        nftauctions[msg.sender].nftContract = _contractAddress;
+        // nftauctions[msg.sender].auctionNumber = 1; tbd
+        nftauctions[msg.sender].nftTokenId = tokenId; //tbd best way
+        nftauctions[msg.sender].claimed = false;
+        registerAuction(_contractAddress, tokenId); 
+        // add a register to let people know a register 
 
-    function startAuction(address _contractAddress, uint256 tokenId) public {  //set a time for the auction
+    }
+
+    function startAuction(uint256 _time) public {  //set a time for the auction CONVERT Seconds to MINUTES 3 mins = 180
+        require(nftauctions[msg.sender].auctionCreator == msg.sender, "Not Auction Creator.");
+        require(auctionStarted == false, "Auction already started.");
         auctionStarted = true;
         auctionStartTime = block.timestamp;
-        auctionEndTime = (auctionStartTime + 3 minutes) ;  //base in minutes, day = 1440 minutes, 1 week = 10080
-        registerAuction(_contractAddress, tokenId); 
-        //get the address of  who does this 
+        auctionEndTime = (auctionStartTime + _time /* minutes */) ;  //base in minutes, day = 1440 minutes, 1 week = 10080
     }
 
     function bid(uint256 _bid) public payable {
@@ -63,12 +76,19 @@ contract Auction is NFTEscrow, Ownable {
         deposits[msg.sender] = msg.value;
     }
 
-    function withdrawAuctionFunds(address _token, uint256 _tokenId, uint256 _depositId) public  {
-        require(msg.sender == depositors[_depositId].nftOwner, "Not Auctioneer");
+    function withdrawAuctionFunds( /*address _token, uint256 _tokenId*/ /*, uint256 _depositId */) public  {
+        require(msg.sender == depositors[msg.sender].nftOwner, "Not Auctioneer");
         require(block.timestamp >= auctionEndTime, "Auction has not ended.");
-        withdrawToken(_token, _tokenId, _depositId, highestBidder);
+        if(highestBidder == address(0)) {
+            withdrawToken(nftauctions[msg.sender].nftContract, nftauctions[msg.sender].nftTokenId, /* _depositId, */ nftauctions[msg.sender].auctionCreator);
+        }else {
+        withdrawToken(nftauctions[msg.sender].nftContract, nftauctions[msg.sender].nftTokenId, /* _depositId, */ highestBidder);
+        }
         (bool success, ) = payable(msg.sender).call{value: address(this).balance}("");
         require(success, "Safe not sent");
+        //reset auction status
+        auctionStarted = false;
+        // remove the registration
     }
 
     // allow this contract to get permission to move from another project
