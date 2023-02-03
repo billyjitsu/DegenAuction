@@ -23,16 +23,12 @@ describe("Degen Auction", function () {
   describe("Deployment", function () {
     it("Should set the right owner", async function () {
       const { nftContract, degenContract, owner } = await loadFixture(beforeEachFunction);
-    
     //   console.log("owner: " , owner.address)
     //   console.log("nftContract: " , nftContract.address)
     //   console.log("degenContract: " , degenContract.address)
       expect(await nftContract.owner()).to.equal(owner.address);
       expect(await degenContract.owner()).to.equal(owner.address);
     });
-
-
-    
     });
 
     describe("Mint and Register", function () {
@@ -109,7 +105,7 @@ describe("Degen Auction", function () {
             expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
         });
 
-        it("Should not allow doulbe registration", async function () {
+        it("Should not allow double registration", async function () {
             const { nftContract, degenContract, owner, auctionCreator } = await loadFixture(
               beforeEachFunction
             );
@@ -127,6 +123,40 @@ describe("Degen Auction", function () {
             // await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0);
             // expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
         });
+
+    });
+
+    describe("Auctions and Bids", function () { 
+      it("Should allow bids", async function () {
+        const { nftContract, degenContract, owner, auctionCreator,  bidder1, bidder2, bidder3} = await loadFixture(
+          beforeEachFunction
+        );
+  
+        await nftContract.connect(auctionCreator).safeMint();
+
+        await nftContract.connect(auctionCreator).setApprovalForAll(degenContract.address, true);
+        await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0);
+        expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
+        await degenContract.connect(auctionCreator).startAuction(60);
+        
+        console.log("Bidder1 balance before:", await ethers.provider.getBalance(bidder1.address))
+        await degenContract.connect(bidder1).bid(1, {value: ethers.utils.parseEther("1")});
+        console.log("Bidder1 balance after:", await ethers.provider.getBalance(bidder1.address))
+        await time.increaseTo(10);
+        await degenContract.connect(bidder2).bid(2, {value: ethers.utils.parseEther("20")});
+        await time.increaseTo(10);
+        let bonusEth = await degenContract.bonus();
+        let stringedBonus = ethers.utils.formatEther(bonusEth);
+        console.log("StringedBonus:", stringedBonus);
+        let bonusCalc = ethers.utils.parseEther("0.1");
+        console.log("Reward:", await degenContract.bonus())
+        console.log("Bidder1 balance outbid:", await ethers.provider.getBalance(bidder1.address))
+
+        // await degenContract.connect(auctionCreator).withdrawAuctionFunds();
+        // expect(await nftContract.balanceOf(auctionCreator.address)).to.equal(3);
+        // await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0);
+        // expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
+    });
 
     });
 
