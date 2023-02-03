@@ -37,12 +37,12 @@ networks: {
     chainId: 1337
   },
 
-  goerli: {
-    url: `${process.env.GOERLI_RPC_URL}`,
-    accounts: [`${process.env.PRIVATE_KEY}`],
-    gas: 300000000,
-    gasPrice: 100000000000,
-  },
+  // goerli: {
+  //   url: `${process.env.GOERLI_RPC_URL}`,
+  //   accounts: [`${process.env.PRIVATE_KEY}`],
+  //   gas: 300000000,
+  //   gasPrice: 100000000000,
+  // },
   polygon: {
     url: process.env.POLYGON_RPC_URL,
     accounts: [`${process.env.PRIVATE_KEY}`],

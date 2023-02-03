@@ -4,7 +4,7 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract MyToken is ERC1155, Ownable {
+contract MyToken1155 is ERC1155, Ownable {
     constructor() ERC1155("https://1155URL") {}
 
     function setURI(string memory newuri) public onlyOwner {
