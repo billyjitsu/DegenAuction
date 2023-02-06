@@ -62,8 +62,8 @@ contract Auction is NFTEscrow, Ownable {
 
     function bid(uint256 _bid) public payable {
         require(auctionStarted == true, "Auction Hasn't started.");
-        require(_bid > highestBid, "Bid is not high enough."); // min bid should be min stepped?
-        require(block.timestamp < auctionEndTime, "Auction has already ended.");
+        require(_bid > highestBid, "Bid is not high enough"); // min bid should be min stepped?
+        require(block.timestamp < auctionEndTime, "Auction has already ended");
         require(_bid <= msg.value, "Bid does not match deposited value.");
         // Return previous highest bidder's deposit
         if (highestBidder != address(0)) {
@@ -81,7 +81,7 @@ contract Auction is NFTEscrow, Ownable {
 
     function withdrawAuctionFunds() public{
         require(msg.sender == depositors[msg.sender].nftOwner, "Not Auctioneer");
-        require(block.timestamp >= auctionEndTime, "Auction has not ended.");
+        require(block.timestamp >= auctionEndTime, "Auction has not ended");
         if (highestBidder == address(0)) {
             withdrawToken(nftauctions[msg.sender].nftContract, nftauctions[msg.sender].nftTokenId,/* _depositId, */ nftauctions[msg.sender].auctionCreator);
             nftauctions[msg.sender].claimed = true;
