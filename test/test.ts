@@ -141,18 +141,18 @@ describe("Degen Auction", function () {
         expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
         await degenContract.connect(auctionCreator).startAuction(60);
         
-        console.log("Bidder1 balance before:", await ethers.provider.getBalance(bidder1.address))
-        await degenContract.connect(bidder1).bid(1, {value: ethers.utils.parseEther("1")});
-        console.log("Bidder1 balance after:", await ethers.provider.getBalance(bidder1.address))
+      //  console.log("Bidder1 balance before:", await ethers.provider.getBalance(bidder1.address))
+        await degenContract.connect(bidder1).bid({value: ethers.utils.parseEther("1")});
+      //  console.log("Bidder1 balance after:", await ethers.provider.getBalance(bidder1.address))
         await time.increase(10);
-        await degenContract.connect(bidder2).bid(2, {value: ethers.utils.parseEther("20")});
+        await degenContract.connect(bidder2).bid({value: ethers.utils.parseEther("20")});
         await time.increase(20);
         let bonusEth = await degenContract.bonus();
         let stringedBonus = ethers.utils.formatEther(bonusEth);
         console.log("StringedBonus:", stringedBonus);
         let bonusCalc = ethers.utils.parseEther("0.1");
-        console.log("Reward:", await degenContract.bonus())
-        console.log("Bidder1 balance outbid:", await ethers.provider.getBalance(bidder1.address))
+       // console.log("Reward:", await degenContract.bonus())
+       // console.log("Bidder1 balance outbid:", await ethers.provider.getBalance(bidder1.address))
 
         // await degenContract.connect(auctionCreator).withdrawAuctionFunds();
         // expect(await nftContract.balanceOf(auctionCreator.address)).to.equal(3);
@@ -190,12 +190,35 @@ describe("Degen Auction", function () {
       expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
       await degenContract.connect(auctionCreator).startAuction(20);
      // console.log("Auction start:", currentTime);
-      await degenContract.connect(bidder1).bid(1, {value: ethers.utils.parseEther("1")});
-      await degenContract.connect(bidder2).bid(2, {value: ethers.utils.parseEther("20")});
+      await degenContract.connect(bidder1).bid({value: ethers.utils.parseEther("1")});
+      await degenContract.connect(bidder2).bid({value: ethers.utils.parseEther("20")});
       await time.increase(15);
       await expect(degenContract.connect(auctionCreator).withdrawAuctionFunds()).to.be.revertedWith("Auction has not ended");
       let newTime = await time.increase(35);
      // console.log("Auction time now:", newTime);
+     
+      await degenContract.connect(auctionCreator).withdrawAuctionFunds()
+      await expect(degenContract.connect(auctionCreator).withdrawAuctionFunds()).to.be.revertedWith("Already Claimed");
+    });
+
+    it("No bidding after auction has ended", async function () {
+      const { nftContract, degenContract, owner, auctionCreator,  bidder1, bidder2, bidder3, currentTime, auctionCreator2} = await loadFixture(
+        beforeEachFunction
+      );
+
+      await nftContract.connect(auctionCreator).safeMint();
+
+      await nftContract.connect(auctionCreator).setApprovalForAll(degenContract.address, true);
+      await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0);
+      expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
+      await degenContract.connect(auctionCreator).startAuction(20);
+      await degenContract.connect(bidder1).bid({value: ethers.utils.parseEther("1")});
+      await degenContract.connect(bidder2).bid({value: ethers.utils.parseEther("20")});
+      await time.increase(15);
+      await expect(degenContract.connect(auctionCreator).withdrawAuctionFunds()).to.be.revertedWith("Auction has not ended");
+      await time.increase(35);
+      await expect(degenContract.connect(bidder3).bid({value: ethers.utils.parseEther("21")})).to.be.revertedWith("Auction has already ended");
+      await expect(degenContract.connect(bidder1).bid({value: ethers.utils.parseEther("20")})).to.be.revertedWith("Auction has already ended");
      
       await degenContract.connect(auctionCreator).withdrawAuctionFunds()
       await expect(degenContract.connect(auctionCreator).withdrawAuctionFunds()).to.be.revertedWith("Already Claimed");
@@ -214,8 +237,8 @@ describe("Degen Auction", function () {
       expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
       await degenContract.connect(auctionCreator).startAuction(20);
      // console.log("Auction start:", currentTime);
-      await degenContract.connect(bidder1).bid(1, {value: ethers.utils.parseEther("1")});
-      await degenContract.connect(bidder2).bid(2, {value: ethers.utils.parseEther("20")});
+      await degenContract.connect(bidder1).bid({value: ethers.utils.parseEther("1")});
+      await degenContract.connect(bidder2).bid({value: ethers.utils.parseEther("20")});
       let newTime = await time.increase(35);
      // console.log("Auction time now:", newTime);
      
@@ -240,8 +263,8 @@ describe("Degen Auction", function () {
       expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
       await degenContract.connect(auctionCreator).startAuction(20);
      // console.log("Auction start:", currentTime);
-      await degenContract.connect(bidder1).bid(1, {value: ethers.utils.parseEther("1")});
-      await degenContract.connect(bidder2).bid(2, {value: ethers.utils.parseEther("20")});
+      await degenContract.connect(bidder1).bid({value: ethers.utils.parseEther("1")});
+      await degenContract.connect(bidder2).bid({value: ethers.utils.parseEther("20")});
       await time.increase(35);
      // console.log("Auction time now:", newTime);
      
@@ -249,7 +272,7 @@ describe("Degen Auction", function () {
       await expect(degenContract.connect(bidder2).withdrawAuctionFunds()).to.be.revertedWith("Not Auctioneer");
       await expect(degenContract.connect(owner).withdrawAuctionFunds()).to.be.revertedWith("Not Auctioneer");
       await degenContract.connect(auctionCreator).withdrawAuctionFunds();
-      });
+    });
   });
 
 
