@@ -18,7 +18,7 @@ contract Auction is NFTEscrow, Ownable {
     uint256 public valueLocked;
     uint256 public bonus;
 
-    mapping(address => uint256) public myAuctions;
+    // mapping(address => uint256) public myAuctions;  // Possible to have multiple auctions
     mapping(address => uint256) public deposits;
 
     mapping(address => NFTAuction) public nftauctions;
@@ -27,7 +27,7 @@ contract Auction is NFTEscrow, Ownable {
         //fix this
         address auctionCreator;
         address nftContract;
-        uint256 auctionNumber;
+    //    uint256 auctionNumber;
         uint256 nftTokenId;
         address finalBidder;
         uint256 theHighestBid;

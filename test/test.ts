@@ -33,7 +33,7 @@ describe("Degen Auction", function () {
     });
     });
 
-    describe("Mint and Register", function () {
+  describe("Mint and Register", function () {
         it("Should mint NFT", async function () {
             const { nftContract, degenContract, owner, auctionCreator } = await loadFixture(
               beforeEachFunction
@@ -126,9 +126,9 @@ describe("Degen Auction", function () {
             // expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
         });
 
-    });
+  });
 
-    describe("Auctions and Bids", function () { 
+  describe("Auctions and Bids", function () { 
       it("Should allow bids", async function () {
         const { nftContract, degenContract, owner, auctionCreator,  bidder1, bidder2, bidder3, currentTime} = await loadFixture(
           beforeEachFunction
