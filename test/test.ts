@@ -19,8 +19,11 @@ describe("Degen Auction", function () {
 
     const currentTime = await time.latest();
     const zeroAddress = '0x0000000000000000000000000000000000000000';
+    const minBid = ethers.utils.parseEther("1");
+    const minIncBid = ethers.utils.parseEther("0.5");
 
-    return { nftContract, degenContract, owner, auctionCreator, bidder1, bidder2, bidder3, currentTime, auctionCreator2, zeroAddress };
+
+    return { nftContract, degenContract, owner, auctionCreator, bidder1, bidder2, bidder3, currentTime, auctionCreator2, zeroAddress, minBid, minIncBid };
   }
 
   describe("Deployment", function () {
@@ -52,7 +55,7 @@ describe("Degen Auction", function () {
         });
 
         it("Should register NFT", async function () {
-            const { nftContract, degenContract, owner, auctionCreator } = await loadFixture(
+            const { nftContract, degenContract, owner, auctionCreator, minBid, minIncBid } = await loadFixture(
               beforeEachFunction
             );
       
@@ -61,7 +64,7 @@ describe("Degen Auction", function () {
             }
 
             await nftContract.connect(auctionCreator).setApprovalForAll(degenContract.address, true);
-            await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0);
+            await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0, minBid, minIncBid);
 
             expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
             expect(await degenContract.registryCreator()).to.equal(auctionCreator.address);
@@ -70,7 +73,7 @@ describe("Degen Auction", function () {
         });
 
         it("Should allow Withdrawal after Registering", async function () {
-            const { nftContract, degenContract, owner, auctionCreator, zeroAddress } = await loadFixture(
+            const { nftContract, degenContract, owner, auctionCreator, zeroAddress, minBid, minIncBid } = await loadFixture(
               beforeEachFunction
             );
       
@@ -81,7 +84,7 @@ describe("Degen Auction", function () {
           
 
             await nftContract.connect(auctionCreator).setApprovalForAll(degenContract.address, true);
-            await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0);
+            await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0, minBid, minIncBid);
             expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
             await degenContract.connect(auctionCreator).withdrawAuctionFunds();
 
@@ -91,7 +94,7 @@ describe("Degen Auction", function () {
         });
 
         it("Should allow re-registering", async function () {
-            const { nftContract, degenContract, owner, auctionCreator, zeroAddress } = await loadFixture(
+            const { nftContract, degenContract, owner, auctionCreator, zeroAddress, minBid, minIncBid } = await loadFixture(
               beforeEachFunction
             );
       
@@ -100,13 +103,13 @@ describe("Degen Auction", function () {
             }
 
             await nftContract.connect(auctionCreator).setApprovalForAll(degenContract.address, true);
-            await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0);
+            await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0, minBid, minIncBid);
             expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
             expect(await degenContract.registryCreator()).to.equal(auctionCreator.address);
             await degenContract.connect(auctionCreator).withdrawAuctionFunds();
             expect(await degenContract.registryCreator()).to.equal(zeroAddress);
             expect(await nftContract.balanceOf(auctionCreator.address)).to.equal(3);
-            await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0);
+            await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0, minBid, minIncBid);
             expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
             expect(await degenContract.registryCreator()).to.equal(auctionCreator.address);
             await degenContract.connect(auctionCreator).withdrawAuctionFunds();
@@ -114,7 +117,7 @@ describe("Degen Auction", function () {
         });
 
         it("Should not allow double registration", async function () {
-            const { nftContract, degenContract, owner, auctionCreator } = await loadFixture(
+            const { nftContract, degenContract, owner, auctionCreator, minBid, minIncBid } = await loadFixture(
               beforeEachFunction
             );
       
@@ -123,9 +126,9 @@ describe("Degen Auction", function () {
             
             await nftContract.connect(auctionCreator).setApprovalForAll(degenContract.address, true);
             await nftContract.setApprovalForAll(degenContract.address, true);
-            await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0);
+            await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0, minBid, minIncBid);
             expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
-            await expect(degenContract.registerNFTAuction(nftContract.address, 1)).to.be.revertedWith("Registration is already live");
+            await expect(degenContract.registerNFTAuction(nftContract.address, 1, minBid, minIncBid)).to.be.revertedWith("Registration is already live");
         });
 
   });
@@ -133,14 +136,14 @@ describe("Degen Auction", function () {
   describe("Auctions and Bids when live", function () { 
 
     it("Should not allow low or high auction times", async function () {
-      const { nftContract, degenContract, owner, auctionCreator,  bidder1, bidder2, bidder3, currentTime} = await loadFixture(
+      const { nftContract, degenContract, owner, auctionCreator,  bidder1, bidder2, bidder3, currentTime, minBid, minIncBid} = await loadFixture(
         beforeEachFunction
       );
 
       await nftContract.connect(auctionCreator).safeMint();
 
       await nftContract.connect(auctionCreator).setApprovalForAll(degenContract.address, true);
-      await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0);
+      await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0, minBid, minIncBid);
       expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
       await expect(degenContract.connect(auctionCreator).startAuction(30)).to.be.revertedWith("Time must be between 5 and 10 minutes");
       await expect(degenContract.connect(auctionCreator).startAuction(700)).to.be.revertedWith("Time must be between 5 and 10 minutes");
@@ -148,14 +151,14 @@ describe("Degen Auction", function () {
   });
 
       it("Should allow bids", async function () {
-        const { nftContract, degenContract, owner, auctionCreator,  bidder1, bidder2, bidder3, currentTime} = await loadFixture(
+        const { nftContract, degenContract, owner, auctionCreator,  bidder1, bidder2, bidder3, currentTime, minBid, minIncBid} = await loadFixture(
           beforeEachFunction
         );
   
         await nftContract.connect(auctionCreator).safeMint();
 
         await nftContract.connect(auctionCreator).setApprovalForAll(degenContract.address, true);
-        await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0);
+        await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0, minBid, minIncBid);
         expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
         await degenContract.connect(auctionCreator).startAuction(300);
         
@@ -180,7 +183,7 @@ describe("Degen Auction", function () {
     });
 
     it("Should not allow double auctions", async function () {
-      const { nftContract, degenContract, owner, auctionCreator,  bidder1, bidder2, bidder3, currentTime, auctionCreator2} = await loadFixture(
+      const { nftContract, degenContract, owner, auctionCreator,  bidder1, bidder2, bidder3, currentTime, auctionCreator2, minBid, minIncBid} = await loadFixture(
         beforeEachFunction
       );
 
@@ -188,16 +191,16 @@ describe("Degen Auction", function () {
       await nftContract.connect(auctionCreator2).safeMint();
 
       await nftContract.connect(auctionCreator).setApprovalForAll(degenContract.address, true);
-      await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0);
+      await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0, minBid, minIncBid);
       expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
       await degenContract.connect(auctionCreator).startAuction(300);
 
       await nftContract.connect(auctionCreator2).setApprovalForAll(degenContract.address, true);
-      await expect(degenContract.connect(auctionCreator2).registerNFTAuction(nftContract.address, 1)).to.be.revertedWith("Registration is already live");
+      await expect(degenContract.connect(auctionCreator2).registerNFTAuction(nftContract.address, 1, minBid, minIncBid)).to.be.revertedWith("Registration is already live");
     });
 
     it("Should not allow auctioneer to withdraw until auction finished", async function () {
-      const { nftContract, degenContract, owner, auctionCreator,  bidder1, bidder2, bidder3, currentTime, auctionCreator2} = await loadFixture(
+      const { nftContract, degenContract, owner, auctionCreator,  bidder1, bidder2, bidder3, currentTime, auctionCreator2, minBid, minIncBid} = await loadFixture(
         beforeEachFunction
       );
 
@@ -205,7 +208,7 @@ describe("Degen Auction", function () {
       await nftContract.connect(auctionCreator2).safeMint();
 
       await nftContract.connect(auctionCreator).setApprovalForAll(degenContract.address, true);
-      await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0);
+      await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0, minBid, minIncBid);
       expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
       await degenContract.connect(auctionCreator).startAuction(300);
      // console.log("Auction start:", currentTime);
@@ -221,14 +224,14 @@ describe("Degen Auction", function () {
     });
 
     it("No bidding after auction has ended", async function () {
-      const { nftContract, degenContract, owner, auctionCreator,  bidder1, bidder2, bidder3, currentTime, auctionCreator2} = await loadFixture(
+      const { nftContract, degenContract, owner, auctionCreator,  bidder1, bidder2, bidder3, currentTime, auctionCreator2, minBid, minIncBid} = await loadFixture(
         beforeEachFunction
       );
 
       await nftContract.connect(auctionCreator).safeMint();
 
       await nftContract.connect(auctionCreator).setApprovalForAll(degenContract.address, true);
-      await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0);
+      await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0, minBid, minIncBid);
       expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
       await degenContract.connect(auctionCreator).startAuction(300);
       await degenContract.connect(bidder1).bid({value: ethers.utils.parseEther("1")});
@@ -244,7 +247,7 @@ describe("Degen Auction", function () {
     });
 
     it("Should allow new auction after finished", async function () {
-      const { nftContract, degenContract, owner, auctionCreator,  bidder1, bidder2, bidder3, currentTime, auctionCreator2} = await loadFixture(
+      const { nftContract, degenContract, owner, auctionCreator,  bidder1, bidder2, bidder3, currentTime, auctionCreator2, minBid, minIncBid} = await loadFixture(
         beforeEachFunction
       );
 
@@ -252,7 +255,7 @@ describe("Degen Auction", function () {
       await nftContract.connect(auctionCreator2).safeMint();
 
       await nftContract.connect(auctionCreator).setApprovalForAll(degenContract.address, true);
-      await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0);
+      await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0, minBid, minIncBid);
       expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
       await degenContract.connect(auctionCreator).startAuction(300);
      // console.log("Auction start:", currentTime);
@@ -264,13 +267,13 @@ describe("Degen Auction", function () {
       await degenContract.connect(auctionCreator).withdrawAuctionFunds()
 
       await nftContract.connect(auctionCreator2).setApprovalForAll(degenContract.address, true);
-      await degenContract.connect(auctionCreator2).registerNFTAuction(nftContract.address, 1);
+      await degenContract.connect(auctionCreator2).registerNFTAuction(nftContract.address, 1, minBid, minIncBid);
       expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
       expect(await nftContract.ownerOf(1)).to.equal(degenContract.address);
     });
 
     it("Only Auctioneer Can withdraw funds", async function () {
-      const { nftContract, degenContract, owner, auctionCreator,  bidder1, bidder2, bidder3, currentTime, auctionCreator2} = await loadFixture(
+      const { nftContract, degenContract, owner, auctionCreator,  bidder1, bidder2, bidder3, currentTime, auctionCreator2, minBid, minIncBid} = await loadFixture(
         beforeEachFunction
       );
 
@@ -278,7 +281,7 @@ describe("Degen Auction", function () {
       await nftContract.connect(auctionCreator2).safeMint();
 
       await nftContract.connect(auctionCreator).setApprovalForAll(degenContract.address, true);
-      await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0);
+      await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0, minBid, minIncBid);
       expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
       await degenContract.connect(auctionCreator).startAuction(300);
      // console.log("Auction start:", currentTime);
@@ -294,14 +297,14 @@ describe("Degen Auction", function () {
     });
 
     it("Only admin can help after time limit", async function () {
-      const { nftContract, degenContract, owner, auctionCreator,  bidder1, bidder2, bidder3, currentTime, auctionCreator2} = await loadFixture(
+      const { nftContract, degenContract, owner, auctionCreator,  bidder1, bidder2, bidder3, currentTime, auctionCreator2, minBid, minIncBid} = await loadFixture(
         beforeEachFunction
       );
 
       await nftContract.connect(auctionCreator).safeMint();
 
       await nftContract.connect(auctionCreator).setApprovalForAll(degenContract.address, true);
-      await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0);
+      await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0, minBid, minIncBid);
       expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
       await degenContract.connect(auctionCreator).startAuction(300);
      // console.log("Auction start:", currentTime);

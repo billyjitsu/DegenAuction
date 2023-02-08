@@ -39,7 +39,7 @@ contract Auction is NFTEscrow, Ownable {
         
     }
 
-     event AuctionRegistered(address creator, address _contractAddress, uint256 _amount);
+     event AuctionRegistered(address creator, address _contractAddress, uint256 _tokenID, uint256 _minimumBid, uint256 _minimumIncrementBid);
      event AuctionStarted(address creator, uint256 _time);
      event NewBid(address minter, uint256 _amount, uint256 _bonus);
      event AuctionCompleted(address _winner, uint256 _amount, address _nftContract, uint256 _tokenID, address _auctioner, uint256 _payout);
@@ -48,7 +48,7 @@ contract Auction is NFTEscrow, Ownable {
     constructor() {}
 
     //step1 register
-    function registerNFTAuction(address _contractAddress, uint256 _tokenId) public {
+    function registerNFTAuction(address _contractAddress, uint256 _tokenId, uint256 _minBid, uint256 _minIncrement) public {
         require(registered == false, "Registration is already live");
         nftauctions[msg.sender].auctionCreator = msg.sender;
         nftauctions[msg.sender].nftContract = _contractAddress;
@@ -60,10 +60,12 @@ contract Auction is NFTEscrow, Ownable {
         registryCreator = msg.sender;
         highestBidder = address(0);
         registered = true;
+        minBid = _minBid;
+        minIncrementBid = _minIncrement;
 
         //need timer to override this is they slacking
 
-        emit AuctionRegistered(msg.sender, _contractAddress, _tokenId);
+        emit AuctionRegistered(msg.sender, _contractAddress, _tokenId, minBid, minIncrementBid);
     }
 
     function startAuction(uint256 _time) public {
@@ -76,8 +78,6 @@ contract Auction is NFTEscrow, Ownable {
         auctionStarted = true;
         auctionStartTime = block.timestamp;
         auctionEndTime = (auctionStartTime + _time); 
-        //minimum bid  
-        //minimum increment bid
         //possible time extender
 
         emit AuctionStarted(msg.sender, _time);
