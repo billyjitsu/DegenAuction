@@ -84,9 +84,13 @@ contract Auction is NFTEscrow, Ownable {
     }
 
     function bid() public payable {
+        if(highestBidder == address(0)){
+            require(msg.value >= minBid, "Bid is not high enough");
+        }
         require(auctionStarted == true, "Auction Hasn't started.");
         require(block.timestamp < auctionEndTime, "Auction has already ended");
-        require(msg.value > highestBid, "Bid is not high enough");   // possibly check for minimum increment bid and lowest bid
+        require(msg.value > highestBid + minIncrementBid, "New Bid is not high enough");   // possibly check for minimum increment bid and lowest bid
+
         // Return previous highest bidder's deposit
         if (highestBidder != address(0)) {
             bonus = calculateBonus(msg.value);
