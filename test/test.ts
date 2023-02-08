@@ -131,6 +131,22 @@ describe("Degen Auction", function () {
   });
 
   describe("Auctions and Bids when live", function () { 
+
+    it("Should not allow low or high auction times", async function () {
+      const { nftContract, degenContract, owner, auctionCreator,  bidder1, bidder2, bidder3, currentTime} = await loadFixture(
+        beforeEachFunction
+      );
+
+      await nftContract.connect(auctionCreator).safeMint();
+
+      await nftContract.connect(auctionCreator).setApprovalForAll(degenContract.address, true);
+      await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0);
+      expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
+      await expect(degenContract.connect(auctionCreator).startAuction(30)).to.be.revertedWith("Time must be between 5 and 10 minutes");
+      await expect(degenContract.connect(auctionCreator).startAuction(700)).to.be.revertedWith("Time must be between 5 and 10 minutes");
+      degenContract.connect(auctionCreator).startAuction(400)  
+  });
+
       it("Should allow bids", async function () {
         const { nftContract, degenContract, owner, auctionCreator,  bidder1, bidder2, bidder3, currentTime} = await loadFixture(
           beforeEachFunction
@@ -141,14 +157,14 @@ describe("Degen Auction", function () {
         await nftContract.connect(auctionCreator).setApprovalForAll(degenContract.address, true);
         await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0);
         expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
-        await degenContract.connect(auctionCreator).startAuction(60);
+        await degenContract.connect(auctionCreator).startAuction(300);
         
       //  console.log("Balance of auctioneer before:", await ethers.provider.getBalance(auctionCreator.address))
         await degenContract.connect(bidder1).bid({value: ethers.utils.parseEther("1")});
         //console.log("Bidder1 balance after:", await ethers.provider.getBalance(bidder1.address))
-        await time.increase(10);
+        await time.increase(100);
         await degenContract.connect(bidder2).bid({value: ethers.utils.parseEther("20")});
-        await time.increase(20);
+        await time.increase(200);
         let bonusEth = await degenContract.bonus();
         let stringedBonus = ethers.utils.formatEther(bonusEth);
        // console.log("StringedBonus:", stringedBonus);
@@ -174,7 +190,7 @@ describe("Degen Auction", function () {
       await nftContract.connect(auctionCreator).setApprovalForAll(degenContract.address, true);
       await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0);
       expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
-      await degenContract.connect(auctionCreator).startAuction(60);
+      await degenContract.connect(auctionCreator).startAuction(300);
 
       await nftContract.connect(auctionCreator2).setApprovalForAll(degenContract.address, true);
       await expect(degenContract.connect(auctionCreator2).registerNFTAuction(nftContract.address, 1)).to.be.revertedWith("Registration is already live");
@@ -191,13 +207,13 @@ describe("Degen Auction", function () {
       await nftContract.connect(auctionCreator).setApprovalForAll(degenContract.address, true);
       await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0);
       expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
-      await degenContract.connect(auctionCreator).startAuction(20);
+      await degenContract.connect(auctionCreator).startAuction(300);
      // console.log("Auction start:", currentTime);
       await degenContract.connect(bidder1).bid({value: ethers.utils.parseEther("1")});
       await degenContract.connect(bidder2).bid({value: ethers.utils.parseEther("20")});
-      await time.increase(15);
+      await time.increase(150);
       await expect(degenContract.connect(auctionCreator).withdrawAuctionFunds()).to.be.revertedWith("Auction has not ended");
-      let newTime = await time.increase(35);
+      let newTime = await time.increase(350);
      // console.log("Auction time now:", newTime);
      
       await degenContract.connect(auctionCreator).withdrawAuctionFunds()
@@ -214,12 +230,12 @@ describe("Degen Auction", function () {
       await nftContract.connect(auctionCreator).setApprovalForAll(degenContract.address, true);
       await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0);
       expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
-      await degenContract.connect(auctionCreator).startAuction(20);
+      await degenContract.connect(auctionCreator).startAuction(300);
       await degenContract.connect(bidder1).bid({value: ethers.utils.parseEther("1")});
       await degenContract.connect(bidder2).bid({value: ethers.utils.parseEther("20")});
-      await time.increase(15);
+      await time.increase(150);
       await expect(degenContract.connect(auctionCreator).withdrawAuctionFunds()).to.be.revertedWith("Auction has not ended");
-      await time.increase(35);
+      await time.increase(350);
       await expect(degenContract.connect(bidder3).bid({value: ethers.utils.parseEther("21")})).to.be.revertedWith("Auction has already ended");
       await expect(degenContract.connect(bidder1).bid({value: ethers.utils.parseEther("20")})).to.be.revertedWith("Auction has already ended");
      
@@ -238,11 +254,11 @@ describe("Degen Auction", function () {
       await nftContract.connect(auctionCreator).setApprovalForAll(degenContract.address, true);
       await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0);
       expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
-      await degenContract.connect(auctionCreator).startAuction(20);
+      await degenContract.connect(auctionCreator).startAuction(300);
      // console.log("Auction start:", currentTime);
       await degenContract.connect(bidder1).bid({value: ethers.utils.parseEther("1")});
       await degenContract.connect(bidder2).bid({value: ethers.utils.parseEther("20")});
-      let newTime = await time.increase(35);
+      let newTime = await time.increase(350);
      // console.log("Auction time now:", newTime);
      
       await degenContract.connect(auctionCreator).withdrawAuctionFunds()
@@ -264,11 +280,11 @@ describe("Degen Auction", function () {
       await nftContract.connect(auctionCreator).setApprovalForAll(degenContract.address, true);
       await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0);
       expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
-      await degenContract.connect(auctionCreator).startAuction(20);
+      await degenContract.connect(auctionCreator).startAuction(300);
      // console.log("Auction start:", currentTime);
       await degenContract.connect(bidder1).bid({value: ethers.utils.parseEther("1")});
       await degenContract.connect(bidder2).bid({value: ethers.utils.parseEther("20")});
-      await time.increase(35);
+      await time.increase(350);
      // console.log("Auction time now:", newTime);
      
       await expect(degenContract.connect(bidder1).withdrawAuctionFunds()).to.be.revertedWith("Not Auctioneer");
@@ -287,11 +303,11 @@ describe("Degen Auction", function () {
       await nftContract.connect(auctionCreator).setApprovalForAll(degenContract.address, true);
       await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0);
       expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
-      await degenContract.connect(auctionCreator).startAuction(20);
+      await degenContract.connect(auctionCreator).startAuction(300);
      // console.log("Auction start:", currentTime);
       await degenContract.connect(bidder1).bid({value: ethers.utils.parseEther("1")});
       await degenContract.connect(bidder2).bid({value: ethers.utils.parseEther("20")});
-      await time.increase(20);
+      await time.increase(300);
      // console.log("Auction time now:", newTime);
       await expect(degenContract.adminAssistance()).to.be.revertedWith("Admin must wait to assist");
       await time.increase(60);
@@ -299,8 +315,8 @@ describe("Degen Auction", function () {
       expect(await nftContract.balanceOf(bidder2.address)).to.equal(1);
       expect(await nftContract.ownerOf(0)).to.equal(bidder2.address);
 
-      console.log("Balance of auctioneer after:", await ethers.provider.getBalance(auctionCreator.address))
-      console.log("Balance of owner after:", await ethers.provider.getBalance(owner.address))
+      //console.log("Balance of auctioneer after:", await ethers.provider.getBalance(auctionCreator.address))
+      //console.log("Balance of owner after:", await ethers.provider.getBalance(owner.address))
       // await expect(degenContract.connect(owner).withdrawAuctionFunds()).to.be.revertedWith("Not Auctioneer");
       // await degenContract.connect(auctionCreator).withdrawAuctionFunds();
     });

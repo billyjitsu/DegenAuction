@@ -10,15 +10,17 @@ contract Auction is NFTEscrow, Ownable {
     uint256 public highestBid;
     uint256 public auctionStartTime;
     uint256 public auctionEndTime;
-    uint256 public valueLocked;
     uint256 public bonus;
+
+    uint256 public minBid;
+    uint256 public minIncrementBid;
 
     address public highestBidder;
     address public registryCreator;
 
-    bool auctionStarted;
-    bool auctionEnded;
-    bool registered;
+    bool public auctionStarted;
+    bool public auctionEnded;
+    bool public registered;
 
     mapping(address => uint256) public deposits;
     //Need to tie the address to the NFT Auctions and an Id to the auctions
@@ -37,11 +39,11 @@ contract Auction is NFTEscrow, Ownable {
         
     }
 
-    // event CubeMinted(address minter, uint256 _amount);
-    // event CubeClaimed(address minter, uint256 _amount);
-    // event CubeBroken(address minter, uint256 _amount);
-    // event DaoCubeCreated(address minter, uint256 [] _daoTokens, uint256 [] _amount); 
-    // event AdminMinted(address [] reciever, uint256 _amount, uint256 _id);
+     event AuctionRegistered(address creator, address _contractAddress, uint256 _amount);
+     event AuctionStarted(address creator, uint256 _time);
+     event NewBid(address minter, uint256 _amount, uint256 _bonus);
+     event AuctionCompleted(address _winner, uint256 _amount, address _nftContract, uint256 _tokenID, address _auctioner, uint256 _payout);
+     event AuctionCompletedByCommunity(address _winner, uint256 _amount, address _nftContract, uint256 _tokenID, address _auctioner, uint256 _payout, address _bountyHunter, uint256 _bounty);
 
     constructor() {}
 
@@ -59,7 +61,9 @@ contract Auction is NFTEscrow, Ownable {
         highestBidder = address(0);
         registered = true;
 
-       // emit CubeMinted(msg.sender, amount);
+        //need timer to override this is they slacking
+
+        emit AuctionRegistered(msg.sender, _contractAddress, _tokenId);
     }
 
     function startAuction(uint256 _time) public {
@@ -68,12 +72,15 @@ contract Auction is NFTEscrow, Ownable {
         require(nftauctions[msg.sender].auctionCreator == msg.sender, "Not Auction Creator.");
         require(auctionStarted == false, "Auction already started.");
         require(nftauctions[msg.sender].claimed == false, "No NFT to auction");
+        require(_time >= 300 && _time <= 600, "Time must be between 5 and 10 minutes");
         auctionStarted = true;
         auctionStartTime = block.timestamp;
         auctionEndTime = (auctionStartTime + _time); 
         //minimum bid  
         //minimum increment bid
         //possible time extender
+
+        emit AuctionStarted(msg.sender, _time);
     }
 
     function bid() public payable {
@@ -90,6 +97,8 @@ contract Auction is NFTEscrow, Ownable {
         highestBidder = msg.sender;
         highestBid = msg.value;
         deposits[msg.sender] = msg.value;
+
+        emit NewBid(msg.sender, msg.value, bonus);
     }
 
     function calculateBonus(uint256 _bid) internal view returns (uint256) {
@@ -127,6 +136,8 @@ contract Auction is NFTEscrow, Ownable {
         auctionStarted = false;
         registered = false;
         registryCreator = address(0);
+
+        emit AuctionCompleted(highestBidder, highestBid, nftauctions[msg.sender].nftContract, nftauctions[msg.sender].nftTokenId, registryCreator, address(this).balance);
     }
 
     function adminAssistance() external onlyOwner {  //change to the community and incentivise
@@ -150,6 +161,8 @@ contract Auction is NFTEscrow, Ownable {
         auctionStarted = false;
         registered = false;
         registryCreator = address(0);
+
+        emit AuctionCompletedByCommunity(highestBidder, highestBid, nftauctions[registryCreator].nftContract, nftauctions[registryCreator].nftTokenId, registryCreator, address(this).balance, msg.sender, withdrawAmount_10);
     }
     
 }
