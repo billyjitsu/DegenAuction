@@ -2,7 +2,7 @@
 pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
+//import "@openzeppelin/contracts/utils/Strings.sol";
 import "./NFTEscrow.sol";
 
 contract Auction is NFTEscrow, Ownable {
@@ -129,7 +129,7 @@ contract Auction is NFTEscrow, Ownable {
         return address(this).balance;
     }
 
-    function withdrawAuctionFunds() public{
+    function withdrawAuctionFunds() external {
         require(msg.sender == depositors[msg.sender].nftOwner, "Not Auctioneer");
         require(block.timestamp >= auctionEndTime, "Auction has not ended");
         if (highestBidder == address(0)) {
@@ -149,10 +149,8 @@ contract Auction is NFTEscrow, Ownable {
         emit AuctionCompleted(highestBidder, highestBid, nftauctions[msg.sender].nftContract, nftauctions[msg.sender].nftTokenId, registryCreator, address(this).balance);
     }
 
-    function adminAssistance() external onlyOwner {  //change to the community and incentivise
-        // need to get the address of the auctioner without message sender
-      // require(msg.sender == depositors[msg.sender].nftOwner, "Not Auctioneer");
-        require(block.timestamp >= (auctionEndTime + 1 minutes), "Admin must wait to assist");
+    function communityAssistance() external { 
+        require(block.timestamp >= (auctionEndTime + 1 minutes), "Must wait to assist");
         if (highestBidder == address(0)) {
             withdrawToken(nftauctions[registryCreator].nftContract, nftauctions[registryCreator].nftTokenId,/* _depositId, */ nftauctions[registryCreator].auctionCreator);
             nftauctions[registryCreator].claimed = true;
@@ -160,12 +158,16 @@ contract Auction is NFTEscrow, Ownable {
             withdrawToken(nftauctions[registryCreator].nftContract, nftauctions[registryCreator].nftTokenId,/* _depositId, */ highestBidder);
             nftauctions[registryCreator].claimed = true;
         }
-        //tax fee for running the transaction for auctioneer
-         uint256 withdrawAmount_10 = (address(this).balance) * 10/100;
-         (bool complete, ) = payable(msg.sender).call{value: withdrawAmount_10}("");
-        require(complete, "bounty funds not sent");
-        (bool success, ) = payable(registryCreator).call{value: address(this).balance}("");
-        require(success, "funds not sent");
+
+        uint256 withdrawAmount_10 = (address(this).balance) * 10/100;  //10% tax
+        //check if statment if there is balance in the contract
+         if(address(this).balance > 0) {
+            (bool complete, ) = payable(msg.sender).call{value: withdrawAmount_10}("");
+            require(complete, "bounty funds not sent");
+            (bool success, ) = payable(registryCreator).call{value: address(this).balance}("");
+            require(success, "funds not sent");
+         }
+
         //reset auction status
         auctionStarted = false;
         registered = false;
