@@ -19,7 +19,7 @@ contract NFTEscrow is IERC721Receiver {
         uint256 tknIdOwner;
         uint256 depositId;
         // uint256 finalBid;
-         bool claimed;
+        bool claimed;
         // mapping(address => bool) voters;
     }
     
@@ -35,7 +35,6 @@ contract NFTEscrow is IERC721Receiver {
     }
 
     function registerAuction(address _contractAddress, uint256 tokenId) internal {
-        
 
         uint256 depositId = _depositorIdCounter.current();
         _depositorIdCounter.increment();

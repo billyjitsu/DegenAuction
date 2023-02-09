@@ -10,6 +10,7 @@ contract Auction is NFTEscrow, Ownable {
     uint256 public highestBid;
     uint256 public auctionStartTime;
     uint256 public auctionEndTime;
+    uint256 public auctionGracePeriod;
     uint256 public bonus;
 
     uint256 public minBid;
@@ -62,6 +63,7 @@ contract Auction is NFTEscrow, Ownable {
         registered = true;
         minBid = _minBid;
         minIncrementBid = _minIncrement;
+        auctionGracePeriod = block.timestamp + 300;
 
         //need timer to override this is they slacking
 
@@ -116,7 +118,6 @@ contract Auction is NFTEscrow, Ownable {
         return nextMinBid;
     }
 
-
     function willFinishAt() public view returns (uint256) {
         if (auctionStartTime == 0) {
             return 0;
@@ -141,15 +142,18 @@ contract Auction is NFTEscrow, Ownable {
         }
         (bool success, ) = payable(msg.sender).call{value: address(this).balance}("");
         require(success, "Payment not sent");
+
         //reset auction status
         auctionStarted = false;
         registered = false;
         registryCreator = address(0);
+        auctionEndTime = 0;
 
         emit AuctionCompleted(highestBidder, highestBid, nftauctions[msg.sender].nftContract, nftauctions[msg.sender].nftTokenId, registryCreator, address(this).balance);
     }
 
     function communityAssistance() external { 
+        require(block.timestamp >= auctionGracePeriod, "Auction in grace period");
         require(block.timestamp >= (auctionEndTime + 1 minutes), "Must wait to assist");
         if (highestBidder == address(0)) {
             withdrawToken(nftauctions[registryCreator].nftContract, nftauctions[registryCreator].nftTokenId,/* _depositId, */ nftauctions[registryCreator].auctionCreator);
@@ -172,6 +176,7 @@ contract Auction is NFTEscrow, Ownable {
         auctionStarted = false;
         registered = false;
         registryCreator = address(0);
+        auctionEndTime = 0;
 
         emit AuctionCompletedByCommunity(highestBidder, highestBid, nftauctions[registryCreator].nftContract, nftauctions[registryCreator].nftTokenId, registryCreator, address(this).balance, msg.sender, withdrawAmount_10);
     }

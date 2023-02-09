@@ -131,6 +131,30 @@ describe("Degen Auction", function () {
             await expect(degenContract.registerNFTAuction(nftContract.address, 1, minBid, minIncBid)).to.be.revertedWith("Registration is already live");
         });
 
+        it("Should allow Community to force return on a stalled registration", async function () {
+          const { nftContract, degenContract, owner, bidder3, auctionCreator, zeroAddress, minBid, minIncBid } = await loadFixture(
+            beforeEachFunction
+          );
+    
+          for (let i = 0; i < 3; i++) {
+            await nftContract.connect(auctionCreator).safeMint();
+          }
+
+          await nftContract.connect(auctionCreator).setApprovalForAll(degenContract.address, true);
+          await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0, minBid, minIncBid);
+          expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
+    
+          await time.increase(61);
+          await expect(degenContract.connect(bidder3).communityAssistance()).to.be.revertedWith("Auction in grace period");
+
+          await time.increase(290);
+          await degenContract.connect(bidder3).communityAssistance()
+
+          expect(await nftContract.balanceOf(auctionCreator.address)).to.equal(3);
+          expect(await degenContract.registryCreator()).to.equal(zeroAddress);
+          
+      });
+
   });
 
   describe("Auctions and Bids when live", function () { 
