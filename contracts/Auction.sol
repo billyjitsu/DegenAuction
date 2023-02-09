@@ -89,7 +89,7 @@ contract Auction is NFTEscrow, Ownable {
         }
         require(auctionStarted == true, "Auction Hasn't started.");
         require(block.timestamp < auctionEndTime, "Auction has already ended");
-        require(msg.value > highestBid + minIncrementBid, "New Bid is not high enough");   // possibly check for minimum increment bid and lowest bid
+        require(msg.value >= highestBid + minIncrementBid, "New Bid is not high enough");   // possibly check for minimum increment bid and lowest bid
 
         // Return previous highest bidder's deposit
         if (highestBidder != address(0)) {
@@ -109,6 +109,11 @@ contract Auction is NFTEscrow, Ownable {
         // 5% bonus
         uint256 difference = (((_bid - highestBid) * 5) / 100);
         return difference;
+    }
+
+    function calculateNewMinBid() external view returns (uint256) {
+        uint256 nextMinBid = (highestBid + minIncrementBid);
+        return nextMinBid;
     }
 
 
@@ -158,7 +163,7 @@ contract Auction is NFTEscrow, Ownable {
         //tax fee for running the transaction for auctioneer
          uint256 withdrawAmount_10 = (address(this).balance) * 10/100;
          (bool complete, ) = payable(msg.sender).call{value: withdrawAmount_10}("");
-
+        require(complete, "bounty funds not sent");
         (bool success, ) = payable(registryCreator).call{value: address(this).balance}("");
         require(success, "funds not sent");
         //reset auction status

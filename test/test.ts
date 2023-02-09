@@ -182,6 +182,50 @@ describe("Degen Auction", function () {
 
     });
 
+    it("Should allow low bids or below min bids", async function () {
+      const { nftContract, degenContract, owner, auctionCreator,  bidder1, bidder2, bidder3, currentTime, minBid, minIncBid} = await loadFixture(
+        beforeEachFunction
+      );
+
+      await nftContract.connect(auctionCreator).safeMint();
+
+      await nftContract.connect(auctionCreator).setApprovalForAll(degenContract.address, true);
+      await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0, minBid, minIncBid);
+      expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
+      await degenContract.connect(auctionCreator).startAuction(300);
+      
+   
+      await expect(degenContract.connect(bidder1).bid({value: ethers.utils.parseEther(".5")})).to.be.revertedWith("Bid is not high enough");
+      await degenContract.connect(bidder1).bid({value: ethers.utils.parseEther("20")}); 
+      let nextBid = await degenContract.calculateNewMinBid();
+      console.log("Next Min Bid Should be:", ethers.utils.formatEther(nextBid)); 
+      await expect(degenContract.connect(bidder2).bid({value: ethers.utils.parseEther("20.2")})).to.be.revertedWith("New Bid is not high enough");
+      await degenContract.connect(bidder2).bid({value: ethers.utils.parseEther("20.5")});
+      nextBid = await degenContract.calculateNewMinBid();
+      console.log("Next Min Bid Should be:", ethers.utils.formatEther(nextBid)); 
+      await expect(degenContract.connect(bidder1).bid({value: ethers.utils.parseEther("20.5")})).to.be.revertedWith("New Bid is not high enough")
+      await expect(degenContract.connect(bidder1).bid({value: ethers.utils.parseEther("20.9")})).to.be.revertedWith("New Bid is not high enough")
+      await degenContract.connect(bidder1).bid({value: ethers.utils.parseEther("25")});
+      nextBid = await degenContract.calculateNewMinBid();
+      console.log("Next Min Bid Should be:", ethers.utils.formatEther(nextBid)); 
+      await expect(degenContract.connect(bidder1).bid({value: ethers.utils.parseEther("2")})).to.be.revertedWith("New Bid is not high enough")
+      await expect(degenContract.connect(bidder2).bid({value: ethers.utils.parseEther("25.4")})).to.be.revertedWith("New Bid is not high enough")
+      await degenContract.connect(bidder3).bid({value: ethers.utils.parseEther("28")});
+      nextBid = await degenContract.calculateNewMinBid();
+      console.log("Next Min Bid Should be:", ethers.utils.formatEther(nextBid)); 
+
+      await degenContract.connect(bidder2).bid({value: ethers.utils.parseEther("29")});
+      await time.increase(200);
+      // let bonusEth = await degenContract.bonus();
+      // let stringedBonus = ethers.utils.formatEther(bonusEth);
+      // console.log("StringedBonus:", stringedBonus);
+      // let contractBalance = await ethers.provider.getBalance(degenContract.address);
+//        console.log("Contract Balance:", ethers.utils.formatEther(contractBalance));
+      await time.increase(600);
+      await degenContract.connect(auctionCreator).withdrawAuctionFunds();
+
+  });
+
     it("Should not allow double auctions", async function () {
       const { nftContract, degenContract, owner, auctionCreator,  bidder1, bidder2, bidder3, currentTime, auctionCreator2, minBid, minIncBid} = await loadFixture(
         beforeEachFunction
