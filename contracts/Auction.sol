@@ -50,6 +50,7 @@ contract Auction is NFTEscrow, Ownable {
 
     //step1 register
     function registerNFTAuction(address _contractAddress, uint256 _tokenId, uint256 _minBid, uint256 _minIncrement) public {
+        //possibly make payable to stop trolling
         require(registered == false, "Registration is already live");
         nftauctions[msg.sender].auctionCreator = msg.sender;
         nftauctions[msg.sender].nftContract = _contractAddress;
@@ -103,6 +104,11 @@ contract Auction is NFTEscrow, Ownable {
         highestBidder = msg.sender;
         highestBid = msg.value;
         deposits[msg.sender] = msg.value;
+
+        //last minute bids adds another minute to auction
+        if(block.timestamp >= auctionEndTime - 60) { 
+            auctionEndTime = auctionEndTime + 60; 
+        }
 
         emit NewBid(msg.sender, msg.value, bonus);
     }
@@ -177,6 +183,7 @@ contract Auction is NFTEscrow, Ownable {
         registered = false;
         registryCreator = address(0);
         auctionEndTime = 0;
+        // timeout user?
 
         emit AuctionCompletedByCommunity(highestBidder, highestBid, nftauctions[registryCreator].nftContract, nftauctions[registryCreator].nftTokenId, registryCreator, address(this).balance, msg.sender, withdrawAmount_10);
     }
