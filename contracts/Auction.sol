@@ -35,8 +35,8 @@ contract Auction is NFTEscrow, Ownable {
         uint256 nftTokenId;
         bool claimed;
      //  uint256 auctionNumber;
-     //   address highestBidder;
-     //   uint256 theHighestBid;
+     //  address highestBidder;
+     //  uint256 theHighestBid;
         
     }
 
@@ -107,7 +107,7 @@ contract Auction is NFTEscrow, Ownable {
 
         //last minute bids adds another minute to auction
         if(block.timestamp >= auctionEndTime - 60) { 
-            auctionEndTime = auctionEndTime + 60; 
+            auctionEndTime = (auctionEndTime + 60); 
         }
 
         emit NewBid(msg.sender, msg.value, bonus);

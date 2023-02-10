@@ -206,6 +206,45 @@ describe("Degen Auction", function () {
 
     });
 
+    it("Should extend time on last minute bids", async function () {
+      const { nftContract, degenContract, owner, auctionCreator,  bidder1, bidder2, bidder3, currentTime, minBid, minIncBid} = await loadFixture(
+        beforeEachFunction
+      );
+
+      await nftContract.connect(auctionCreator).safeMint();
+
+      await nftContract.connect(auctionCreator).setApprovalForAll(degenContract.address, true);
+      await degenContract.connect(auctionCreator).registerNFTAuction(nftContract.address, 0, minBid, minIncBid);
+      expect(await nftContract.balanceOf(degenContract.address)).to.equal(1);
+      await degenContract.connect(auctionCreator).startAuction(300);
+      
+      console.log("Auction End time:", await degenContract.auctionEndTime())
+      await degenContract.connect(bidder1).bid({value: ethers.utils.parseEther("1")});
+      await time.increase(100);
+      await degenContract.connect(bidder2).bid({value: ethers.utils.parseEther("20")});
+      await time.increase(100);
+      await degenContract.connect(bidder1).bid({value: ethers.utils.parseEther("21")});
+      console.log("Auction End time:", await degenContract.auctionEndTime())
+      await time.increase(55);
+      await degenContract.connect(bidder2).bid({value: ethers.utils.parseEther("23")});
+      console.log("Auction End time:", await degenContract.auctionEndTime())
+      await time.increase(55);
+      await degenContract.connect(bidder2).bid({value: ethers.utils.parseEther("24")});
+      console.log("Auction End time:", await degenContract.auctionEndTime())
+      await time.increase(35);
+      await degenContract.connect(bidder1).bid({value: ethers.utils.parseEther("25")});
+      console.log("Auction End time:", await degenContract.auctionEndTime())
+      await time.increase(35);
+      await degenContract.connect(bidder2).bid({value: ethers.utils.parseEther("26")});
+      console.log("Auction End time:", await degenContract.auctionEndTime())
+
+//       await degenContract.connect(auctionCreator).withdrawAuctionFunds();
+  //    contractBalance = await ethers.provider.getBalance(degenContract.address);
+  //    console.log("Contract Balance after:", ethers.utils.formatEther(contractBalance));
+ //     console.log("Balance of auctioneer after:", await ethers.provider.getBalance(auctionCreator.address))
+
+  });
+
     it("Should not allow low bids or below min bids", async function () {
       const { nftContract, degenContract, owner, auctionCreator,  bidder1, bidder2, bidder3, currentTime, minBid, minIncBid} = await loadFixture(
         beforeEachFunction
@@ -358,7 +397,7 @@ describe("Degen Auction", function () {
       await degenContract.connect(auctionCreator).withdrawAuctionFunds();
     });
 
-    it("Only admin can help after time limit", async function () {
+    it("Only community can help after time limit", async function () {
       const { nftContract, degenContract, owner, auctionCreator,  bidder1, bidder2, bidder3, currentTime, auctionCreator2, minBid, minIncBid} = await loadFixture(
         beforeEachFunction
       );
