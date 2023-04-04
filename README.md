@@ -1,8 +1,7 @@
-# Sample Hardhat Project
+# Earn to Bid
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
-
-Try running some of the following tasks:
+Basic project, where each bidder of staked NFT gets a percentage of what they were outbid by.
+supports ERC721, supports ERC1155
 
 ```shell
 npx hardhat help
